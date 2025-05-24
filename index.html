@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="تماس تصویری با کیفیت بالا با RemoteVM، فورکی از VDO.Ninja">
-  <meta name="keywords" content="تماس تصویری, RemoteVM, VDO.Ninja, ویدیو کنفرانس, استریم">
+  <meta name="description" content="تماس تصویری با کیفیت بالا با RemoteVM، ">
+  <meta name="keywords" content="تماس تصویری, RemoteVM, ویدیو کنفرانس, استریم">
   <meta name="author" content="RemoteVM">
   <title>تماس تصویری - RemoteVM</title>
   <link rel="icon" type="image/png" href="favicon.png">
@@ -225,7 +225,7 @@
             data-tooltip="کپی لینک OBS"
           >
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M8 3a2 2 0 00-2 2v1h6V5a2 2 0 00-2-2H8zm8 3H8v9a2 2 0 002 2h5a2 2 0 002-2V6z"/>
+              <path d="M8 2a2 2 0 00-2 2v10a2 2 0 002 2h6a2 2 0 002-2V6l-3-3H8zm0 1h5l2 2v9H8V3zm-1 2H6a2 2 0 00-2 2v10a2 2 0 002 2h6v-2H6V7h1V5z"/>
             </svg>
           </button>
         </div>
@@ -235,7 +235,7 @@
     </main>
 
     <footer class="mt-8 text-center text-gray-400 text-sm">
-      <p>© 2025 <a href="https://remotevm.ir" target="_blank" class="text-blue-400 hover:underline">Remote VM</a>لایو استریم <a href="_blank" target="_blank" class="text-blue-400 hover:underline">VDO.Ninja</a>. تمامی حقوق محفوظ است.</p>
+      <p>© 2025 <a href="https://remotevm.ir" target="_blank" class="text-blue-400 hover:underline">RemoteVM</a> -- <a href="https://remotevm.site" target="_blank" class="text-blue-400 hover:underline">R.V.M</a>. تمامی حقوق محفوظ است.</p>
     </footer>
   </div>
 
@@ -317,8 +317,8 @@
           default:
             resolution = "&width=1280&height=720";
         }
-        const pushURL = `https://live.remotevm.ir/?push=${roomId}&cleanish&transparent&scale=cover${resolution}`;
-        state.obsLink = `https://live.remotevm.ir/?view=${roomId}&clean&`;
+        const pushURL = `https://live.remotevm.ir/?push=${roomId}&autostart&cleanish&transparent&scale=cover${resolution}`;
+        state.obsLink = `https://live.remotevm.ir/?view=${roomId}`;
 
         elements.vdoFrame.src = pushURL;
         elements.vdoFrame.classList.remove('hidden');
