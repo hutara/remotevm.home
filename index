@@ -1,0 +1,86 @@
+این کد را میشه در github منتشر کرد به عنوان یک githubpage :  کد 
+: <style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+
+  .fullscreen-iframe {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    border: none;
+  }
+</style>
+
+<div style="text-align:center; padding: 20px;">
+  <h3>شروع تماس تصویری</h3>
+  <button onclick="startVDOCall()">ساخت اتاق تماس</button>
+  <button id="fsButton" onclick="goFullscreen()" style="display:none;">نمایش تمام‌صفحه</button>
+
+  <br><br>
+  <iframe id="vdoFrame" width="100%" height="600" style="display:none; border:0;" allow="camera; microphone; fullscreen"></iframe>
+
+  <div id="obsSection" style="display:none; margin-top: 20px;">
+    <label for="obsLink">لینک مخصوص OBS:</label><br>
+    <input type="text" id="obsLink" style="width:80%; padding: 5px;" readonly>
+    <button onclick="copyOBSLink()">کپی لینک</button>
+  </div>
+</div>
+
+<script>
+let obsLink = "";
+
+function startVDOCall() {
+  const roomId = "room" + Math.floor(Math.random() * 100000);
+
+  // ✅ لینک ارسال ویدیو (iframe)
+  const pushURL = `https://vdo.ninja/?push=${roomId}&autostart&cleanish&transparent&scale=cover`;
+
+  // ✅ لینک نمایش برای OBS
+  obsLink = `https://vdo.ninja/?view=${roomId}`;
+
+  const iframe = document.getElementById('vdoFrame');
+  iframe.src = pushURL;
+  iframe.style.display = "block";
+
+  document.getElementById('obsLink').value = obsLink;
+  document.getElementById('obsSection').style.display = "block";
+  document.getElementById('fsButton').style.display = "inline-block";
+}
+
+function copyOBSLink() {
+  const input = document.getElementById("obsLink");
+  navigator.clipboard.writeText(input.value).catch(() => {
+    input.select();
+    document.execCommand("copy");
+  });
+}
+
+function goFullscreen() {
+  const iframe = document.getElementById("vdoFrame");
+  iframe.classList.add("fullscreen-iframe");
+
+  if (iframe.requestFullscreen) {
+    iframe.requestFullscreen();
+  } else if (iframe.mozRequestFullScreen) {
+    iframe.mozRequestFullScreen();
+  } else if (iframe.webkitRequestFullscreen) {
+    iframe.webkitRequestFullscreen();
+  } else if (iframe.msRequestFullscreen) {
+    iframe.msRequestFullscreen();
+  }
+}
+
+// حذف حالت fullscreen هنگام خروج
+document.addEventListener("fullscreenchange", () => {
+  const iframe = document.getElementById("vdoFrame");
+  if (!document.fullscreenElement) {
+    iframe.classList.remove("fullscreen-iframe");
+  }
+});
+</script>
