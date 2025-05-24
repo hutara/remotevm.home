@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="تماس تصویری با کیفیت بالا با RemoteVM">
+  <meta name="description" content="تماس تصویری با کیفیت بالا با RemoteVM، فورکی از VDO.Ninja">
   <meta name="keywords" content="تماس تصویری, RemoteVM, VDO.Ninja, ویدیو کنفرانس, استریم">
   <meta name="author" content="RemoteVM">
   <title>تماس تصویری - RemoteVM</title>
@@ -38,7 +38,7 @@
       border: 4px solid rgba(255, 255, 255, 0.2);
       border-top: 4px solid #3b82f6;
       border-radius: 50%;
-      width: 50px;
+      width: 40px;
       height: 40px;
       animation: spin 1s linear infinite;
       margin: 20px auto;
@@ -173,16 +173,16 @@
           بی‌صدا
         </button>
         <button 
-          id="cameraButton" 
-          onclick="toggleCamera()" 
-          class="btn bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 hidden" 
-          aria-label="خاموش/روشن کردن دوربین"
-          data-tooltip="خاموش/روشن کردن دوربین"
+          id="shareButton" 
+          onclick="shareRoomLink()" 
+          class="btn bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 hidden" 
+          aria-label="اشتراک‌گذاری لینک اتاق"
+          data-tooltip="کپی لینک اتاق برای اشتراک"
         >
           <svg class="w-5 h-5 inline-block ml-2" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M5 4a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2V8l-3-3H5zm3 10H7v-2h1v2zm3 0h-1v-2h1v2zm3 0h-1v-2h1v2z"/>
+            <path d="M15 8a3 3 0 10-2.12-5.12L8 7.76 3.12 2.88a3 3 0 10-1.42 1.42L6.58 9 1.7 13.88a3 3 0 104.24 4.24L11 13.24l4.88 4.88a3 3 0 104.24-4.24L15.24 9l4.88-4.88A3 3 0 0015 8z"/>
           </svg>
-          خاموش دوربین
+          اشتراک لینک
         </button>
       </div>
 
@@ -235,7 +235,7 @@
     </main>
 
     <footer class="mt-8 text-center text-gray-400 text-sm">
-      <p>© 2025 RemoteVM - <a href="https://RemoteVm.ir" target="_blank" class="text-blue-400 hover:underline"></a>. تمامی حقوق محفوظ است.</p>
+      <p>© 2025 <a href="https://remotevm.ir" target="_blank" class="text-blue-400 hover:underline">Remote VM</a>لایو استریم <a href="_blank" target="_blank" class="text-blue-400 hover:underline">VDO.Ninja</a>. تمامی حقوق محفوظ است.</p>
     </footer>
   </div>
 
@@ -244,7 +244,6 @@
     let state = {
       isCallActive: false,
       isMuted: false,
-      isCameraOn: true,
       obsLink: '',
       isLoading: false
     };
@@ -259,7 +258,7 @@
       resetButton: document.getElementById('resetButton'),
       startCallBtn: document.getElementById('startCallBtn'),
       muteButton: document.getElementById('muteButton'),
-      cameraButton: document.getElementById('cameraButton'),
+      shareButton: document.getElementById('shareButton'),
       loader: document.getElementById('loader'),
       qualitySelect: document.getElementById('qualitySelect'),
       copyMessage: document.getElementById('copyMessage'),
@@ -303,7 +302,7 @@
         state.isCallActive = true;
         elements.startCallBtn.disabled = true;
         elements.muteButton.classList.remove('hidden');
-        elements.cameraButton.classList.remove('hidden');
+        elements.shareButton.classList.remove('hidden');
 
         const roomId = `room${Math.floor(Math.random() * 100000)}`;
         const quality = elements.qualitySelect.value;
@@ -318,8 +317,8 @@
           default:
             resolution = "&width=1280&height=720";
         }
-        const pushURL = `https://live.remotevm.ir/?push=${roomId}&autostart&cleanish&transparent&scale=cover${resolution}`;
-        state.obsLink = `https://live.remotevm.ir/?view=${roomId}`;
+        const pushURL = `https://live.remotevm.ir/?push=${roomId}&cleanish&transparent&scale=cover${resolution}`;
+        state.obsLink = `https://live.remotevm.ir/?view=${roomId}&clean&`;
 
         elements.vdoFrame.src = pushURL;
         elements.vdoFrame.classList.remove('hidden');
@@ -347,7 +346,7 @@
       
       state.isCallActive = false;
       state.isMuted = false;
-      state.isCameraOn = true;
+      state.obsLink = '';
       
       elements.vdoFrame.src = '';
       elements.vdoFrame.classList.add('hidden');
@@ -355,7 +354,8 @@
       elements.fsButton.classList.add('hidden');
       elements.stopCallButton.classList.add('hidden');
       elements.muteButton.classList.add('hidden');
-      elements.cameraButton.classList.add('hidden');
+      elements.shareButton.classList.add('hidden');
+      elements.resetButton.classList.add('hidden');
       elements.startCallBtn.disabled = false;
       
       updateStatusIndicator();
@@ -365,7 +365,6 @@
     function resetPage() {
       state.isCallActive = false;
       state.isMuted = false;
-      state.isCameraOn = true;
       state.obsLink = '';
       
       elements.vdoFrame.src = '';
@@ -374,7 +373,7 @@
       elements.fsButton.classList.add('hidden');
       elements.stopCallButton.classList.add('hidden');
       elements.muteButton.classList.add('hidden');
-      elements.cameraButton.classList.add('hidden');
+      elements.shareButton.classList.add('hidden');
       elements.resetButton.classList.add('hidden');
       elements.obsLinkInput.value = '';
       elements.qualitySelect.value = '720';
@@ -392,14 +391,34 @@
 
       try {
         await navigator.clipboard.writeText(state.obsLink);
-        showMessage('لینک با موفقیت کپی شد!', 'success');
+        showMessage('لینک OBS با موفقیت کپی شد!', 'success');
       } catch {
         elements.obsLinkInput.select();
         try {
           document.execCommand('copy');
-          showMessage('لینک با موفقیت کپی شد!', 'success');
+          showMessage('لینک OBS با موفقیت کپی شد!', 'success');
         } catch {
-          showMessage('خطا در کپی لینک!', 'error');
+          showMessage('خطا در کپی لینک OBS!', 'error');
+        }
+      }
+    }
+
+    async function shareRoomLink() {
+      if (!state.obsLink) {
+        showMessage('لینکی برای اشتراک وجود ندارد!', 'error');
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(state.obsLink);
+        showMessage('لینک اتاق با موفقیت کپی شد!', 'success');
+      } catch {
+        elements.obsLinkInput.select();
+        try {
+          document.execCommand('copy');
+          showMessage('لینک اتاق با موفقیت کپی شد!', 'success');
+        } catch {
+          showMessage('خطا در کپی لینک اتاق!', 'error');
         }
       }
     }
@@ -433,17 +452,6 @@
       showMessage(state.isMuted ? 'میکروفون بی‌صدا شد' : 'میکروفون باصدا شد', 'success');
     }
 
-    function toggleCamera() {
-      state.isCameraOn = !state.isCameraOn;
-      elements.cameraButton.innerHTML = `
-        <svg class="w-5 h-5 inline-block ml-2" fill="currentColor" viewBox="0 0 20 20">
-          <path d="${state.isCameraOn ? 'M5 4a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2V8l-3-3H5zm3 10H7v-2h1v2zm3 0h-1v-2h1v2zm3 0h-1v-2h1v2z' : 'M5 4a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2V8l-3-3H5zm3 10H7v-2h1v2zm3 0h-1v-2h1v2zm3 0h-1v-2h1v2zM3 3l3 3'}/>"
-        </svg>
-        ${state.isCameraOn ? 'خاموش دوربین' : 'روشن دوربین'}
-      `;
-      showMessage(state.isCameraOn ? 'دوربین روشن شد' : 'دوربین خاموش شد', 'success');
-    }
-
     // Event listeners
     document.addEventListener('fullscreenchange', () => {
       if (!document.fullscreenElement) {
@@ -472,6 +480,8 @@
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && document.activeElement === elements.startCallBtn) {
         startVDOCall();
+      } else if (e.key === 'Enter' && document.activeElement === elements.shareButton) {
+        shareRoomLink();
       }
     });
   </script>
