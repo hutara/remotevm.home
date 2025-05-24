@@ -3,9 +3,74 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="تماس تصویری با کیفیت بالا با RemoteVM">
+  <meta name="keywords" content="تماس تصویری, RemoteVM, VDO.Ninja, ویدیو کنفرانس, استریم">
+  <meta name="author" content="RemoteVM">
   <title>تماس تصویری - RemoteVM</title>
+  <link rel="icon" type="image/png" href="favicon.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    body {
+      background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+      font-family: 'Vazirmatn', sans-serif;
+    }
+    .container {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .btn {
+      transition: all 0.3s ease;
+      transform: scale(1);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    .btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .loader {
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-top: 4px solid #3b82f6;
+      border-radius: 50%;
+      width: 50px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .tooltip {
+      position: relative;
+    }
+    .tooltip:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #374151;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 10;
+    }
     .fullscreen-iframe {
       position: fixed;
       top: 0;
@@ -15,222 +80,400 @@
       z-index: 9999;
       border: none;
     }
-    .loader {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #3498db;
-      border-radius: w-full;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 20px auto;
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 8px;
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+    .status-active { background: #22c55e; }
+    .status-inactive { background: #ef4444; }
   </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex items-center justify-center min-h-screen transition-colors duration-300">
-  <div class="container mx-auto p-6 max-w-lg bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-    <div class="flex justify-between items-center mb-6">
-      <h3 class="text-2xl font-bold text-center text-gray-800 dark:text-gray-100">تماس تصویری با RemoteVM</h3>
+<body class="min-h-screen flex items-center justify-center text-gray-100">
+  <div class="container mx-auto p-6 max-w-xl rounded-xl shadow-2xl">
+    <header class="flex justify-between items-center mb-8">
+      <div class="flex items-center gap-2">
+        <h1 class="text-3xl font-bold text-white">تماس تصویری RemoteVM</h1>
+        <span id="statusIndicator" class="status-indicator status-inactive" aria-label="وضعیت تماس"></span>
+      </div>
       <button 
         id="themeToggle" 
-        class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100" 
+        class="btn p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white" 
         aria-label="تغییر تم"
+        data-tooltip="تغییر تم"
       >
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
           <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12zm-1-6a1 1 0 112 0 1 1 0 01-2 0z"/>
         </svg>
       </button>
-    </div>
-    <div class="flex flex-wrap justify-center gap-4 mb-6">
-      <button 
-        onclick="startVDOCall()" 
-        class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300" 
-        aria-label="ساخت اتاق تماس"
-      >
-        ساخت اتاق تماس
-      </button>
-      <button 
-        id="fsButton" 
-        onclick="goFullscreen()" 
-        class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition duration-300 hidden" 
-        aria-label="نمایش تمام‌صفحه"
-      >
-        نمایش تمام‌صفحه
-      </button>
-      <button 
-        id="stopCallButton" 
-        onclick="stopVDOCall()" 
-        class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition duration-300 hidden" 
-        aria-label="توقف تماس"
-      >
-        توقف تماس
-      </button>
-      <button 
-        id="resetButton" 
-        onclick="resetPage()" 
-        class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition duration-300 hidden" 
-        aria-label="ریست صفحه"
-      >
-        ریست صفحه
-      </button>
-    </div>
-    <div class="mb-6">
-      <label for="qualitySelect" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">کیفیت ویدیو:</label>
-      <select 
-        id="qualitySelect" 
-        class="w-full p-3 border rounded-lg text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        aria-label="انتخاب کیفیت ویدیو"
-      >
-        <option value="720">720p (پیش‌فرض)</option>
-        <option value="1080">1080p</option>
-      </select>
-    </div>
-    <div id="loader" class="loader hidden"></div>
-    <iframe 
-      id="vdoFrame" 
-      class="w-full h-[400px] md:h-[600px] rounded-lg hidden border-0" 
-      allow="camera; microphone; fullscreen"
-    ></iframe>
-    <div id="obsSection" class="mt-6 hidden">
-      <label for="obsLink" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">لینک مخصوص OBS:</label>
-      <div class="flex gap-2">
-        <input 
-          type="text" 
-          id="obsLink" 
-          class="w-full p-3 border rounded-lg text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" 
-          readonly 
-          aria-label="لینک OBS"
-        >
+    </header>
+
+    <main class="fade-in">
+      <div class="grid grid-cols-2 gap-4 mb-8">
         <button 
-          onclick="copyOBSLink()" 
-          class="bg-gray-800 text-white px-4 py-3 rounded-lg hover:bg-gray-900 transition duration-300" 
-          aria-label="کپی لینک OBS"
+          id="startCallBtn" 
+          onclick="startVDOCall()" 
+          class="btn bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-blue-400" 
+          aria-label="ساخت اتاق تماس"
+          data-tooltip="شروع تماس جدید"
         >
-          کپی لینک
+          <svg class="w-5 h-5 inline-block ml-2" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-11h2v4h4v2h-4v4h-2v-4H5v-2h4V7z"/>
+          </svg>
+          ساخت اتاق تماس
+        </button>
+        <button 
+          id="fsButton" 
+          onclick="goFullscreen()" 
+          class="btn bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 hidden" 
+          aria-label="نمایش تمام‌صفحه"
+          data-tooltip="نمایش در حالت تمام‌صفحه"
+        >
+          <svg class="w-5 h-5 inline-block ml-2" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M5 3h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2zm8 2H7a1 1 0 00-1 1v8a1 1 0 001 1h6a1 1 0 001-1V6a1 1 0 00-1-1z"/>
+          </svg>
+          تمام‌صفحه
+        </button>
+        <button 
+          id="stopCallButton" 
+          onclick="stopVDOCall()" 
+          class="btn bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 hidden" 
+          aria-label="توقف تماس"
+          data-tooltip="پایان دادن به تماس"
+        >
+          <svg class="w-5 h-5 inline-block ml-2" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 18a8 8 0 100-16 8 8 0 000-16zM8 7h4v6H8V7z"/>
+          </svg>
+          توقف تماس
+        </button>
+        <button 
+          id="resetButton" 
+          onclick="resetPage()" 
+          class="btn bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 hidden" 
+          aria-label="ریست صفحه"
+          data-tooltip="بازنشانی تنظیمات"
+        >
+          <svg class="w-5 h-5 inline-block ml-2" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm2 5h8v2H6V7z"/>
+          </svg>
+          ریست صفحه
+        </button>
+        <button 
+          id="muteButton" 
+          onclick="toggleMute()" 
+          class="btn bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700 hidden" 
+          aria-label="بی‌صدا کردن"
+          data-tooltip="بی‌صدا/باصدا کردن میکروفون"
+        >
+          <svg class="w-5 h-5 inline-block ml-2" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 3a2 2 0 00-2 2v5a2 2 0 002 2h1l1 5h2V3h-4z"/>
+          </svg>
+          بی‌صدا
+        </button>
+        <button 
+          id="cameraButton" 
+          onclick="toggleCamera()" 
+          class="btn bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 hidden" 
+          aria-label="خاموش/روشن کردن دوربین"
+          data-tooltip="خاموش/روشن کردن دوربین"
+        >
+          <svg class="w-5 h-5 inline-block ml-2" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M5 4a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2V8l-3-3H5zm3 10H7v-2h1v2zm3 0h-1v-2h1v2zm3 0h-1v-2h1v2z"/>
+          </svg>
+          خاموش دوربین
         </button>
       </div>
-      <p id="copyMessage" class="mt-2 text-sm text-green-600 dark:text-green-400 hidden">لینک با موفقیت کپی شد!</p>
-      <p id="errorMessage" class="mt-2 text-sm text-red-600 dark:text-red-400 hidden"></p>
-    </div>
+
+      <div class="mb-8">
+        <label for="qualitySelect" class="block text-gray-300 font-medium mb-2">کیفیت ویدیو:</label>
+        <select 
+          id="qualitySelect" 
+          class="w-full p-3 border border-gray-700 rounded-lg text-gray-300 bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="انتخاب کیفیت ویدیو"
+        >
+          <option value="480">480p</option>
+          <option value="720" selected>720p (پیش‌فرض)</option>
+          <option value="1080">1080p</option>
+        </select>
+      </div>
+
+      <div id="loader" class="loader hidden" aria-label="در حال بارگذاری"></div>
+      
+      <iframe 
+        id="vdoFrame" 
+        class="w-full h-[400px] md:h-[600px] rounded-lg hidden border-2 border-gray-700" 
+        allow="camera; microphone; fullscreen"
+        title="پنجره تماس تصویری"
+      ></iframe>
+
+      <section id="obsSection" class="mt-8 hidden">
+        <label for="obsLink" class="block text-gray-300 font-medium mb-2">لینک مخصوص OBS:</label>
+        <div class="flex gap-2">
+          <input 
+            type="text" 
+            id="obsLink" 
+            class="w-full p-3 border border-gray-700 rounded-lg text-gray-300 bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+            readonly 
+            aria-label="لینک OBS"
+          >
+          <button 
+            onclick="copyOBSLink()" 
+            class="btn bg-gray-700 text-white px-4 py-3 rounded-lg hover:bg-gray-600" 
+            aria-label="کپی لینک OBS"
+            data-tooltip="کپی لینک OBS"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M8 3a2 2 0 00-2 2v1h6V5a2 2 0 00-2-2H8zm8 3H8v9a2 2 0 002 2h5a2 2 0 002-2V6z"/>
+            </svg>
+          </button>
+        </div>
+        <p id="copyMessage" class="mt-2 text-sm text-green-400 hidden" role="alert">لینک با موفقیت کپی شد!</p>
+        <p id="errorMessage" class="mt-2 text-sm text-red-400 hidden" role="alert"></p>
+      </section>
+    </main>
+
+    <footer class="mt-8 text-center text-gray-400 text-sm">
+      <p>© 2025 RemoteVM - <a href="https://RemoteVm.ir" target="_blank" class="text-blue-400 hover:underline"></a>. تمامی حقوق محفوظ است.</p>
+    </footer>
   </div>
 
   <script>
-    let obsLink = "";
-    let isCallActive = false;
+    // State management
+    let state = {
+      isCallActive: false,
+      isMuted: false,
+      isCameraOn: true,
+      obsLink: '',
+      isLoading: false
+    };
 
-    function startVDOCall() {
-      if (isCallActive) return; // جلوگیری از اجرای چندباره
-      isCallActive = true;
-      showLoader(true);
+    // DOM elements
+    const elements = {
+      vdoFrame: document.getElementById('vdoFrame'),
+      obsLinkInput: document.getElementById('obsLink'),
+      obsSection: document.getElementById('obsSection'),
+      fsButton: document.getElementById('fsButton'),
+      stopCallButton: document.getElementById('stopCallButton'),
+      resetButton: document.getElementById('resetButton'),
+      startCallBtn: document.getElementById('startCallBtn'),
+      muteButton: document.getElementById('muteButton'),
+      cameraButton: document.getElementById('cameraButton'),
+      loader: document.getElementById('loader'),
+      qualitySelect: document.getElementById('qualitySelect'),
+      copyMessage: document.getElementById('copyMessage'),
+      errorMessage: document.getElementById('errorMessage'),
+      statusIndicator: document.getElementById('statusIndicator')
+    };
 
-      const roomId = "room" + Math.floor(Math.random() * 100000);
-      const quality = document.getElementById('qualitySelect').value;
-      const resolution = quality === "1080" ? "&width=1920&height=1080" : "&width=1280&height=720";
-      const pushURL = `https://live.remotevm.ir/?push=${roomId}&autostart&cleanish&transparent&scale=cover${resolution}`;
-      obsLink = `https://live.remotevm.ir/?view=${roomId}`;
+    // Utility functions
+    const debounce = (func, wait) => {
+      let timeout;
+      return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    };
 
-      const iframe = document.getElementById('vdoFrame');
-      iframe.src = pushURL;
-      iframe.classList.remove('hidden');
-      iframe.onload = () => showLoader(false);
+    const showMessage = (message, type) => {
+      const messageElement = type === 'success' ? elements.copyMessage : elements.errorMessage;
+      messageElement.textContent = message;
+      messageElement.classList.remove('hidden');
+      setTimeout(() => messageElement.classList.add('hidden'), 3000);
+    };
 
-      document.getElementById('obsLink').value = obsLink;
-      document.getElementById('obsSection').classList.remove('hidden');
-      document.getElementById('fsButton').classList.remove('hidden');
-      document.getElementById('stopCallButton').classList.remove('hidden');
-      document.getElementById('resetButton').classList.remove('hidden');
+    const toggleLoader = (show) => {
+      state.isLoading = show;
+      elements.loader.classList.toggle('hidden', !show);
+      elements.startCallBtn.disabled = show;
+    };
+
+    const updateStatusIndicator = () => {
+      elements.statusIndicator.classList.toggle('status-active', state.isCallActive);
+      elements.statusIndicator.classList.toggle('status-inactive', !state.isCallActive);
+    };
+
+    // Main functions
+    async function startVDOCall() {
+      if (state.isCallActive || state.isLoading) return;
+
+      try {
+        toggleLoader(true);
+        state.isCallActive = true;
+        elements.startCallBtn.disabled = true;
+        elements.muteButton.classList.remove('hidden');
+        elements.cameraButton.classList.remove('hidden');
+
+        const roomId = `room${Math.floor(Math.random() * 100000)}`;
+        const quality = elements.qualitySelect.value;
+        let resolution;
+        switch (quality) {
+          case "480":
+            resolution = "&width=854&height=480";
+            break;
+          case "1080":
+            resolution = "&width=1920&height=1080";
+            break;
+          default:
+            resolution = "&width=1280&height=720";
+        }
+        const pushURL = `https://live.remotevm.ir/?push=${roomId}&autostart&cleanish&transparent&scale=cover${resolution}`;
+        state.obsLink = `https://live.remotevm.ir/?view=${roomId}`;
+
+        elements.vdoFrame.src = pushURL;
+        elements.vdoFrame.classList.remove('hidden');
+        
+        await new Promise(resolve => elements.vdoFrame.onload = resolve);
+        
+        elements.obsLinkInput.value = state.obsLink;
+        elements.obsSection.classList.remove('hidden');
+        elements.fsButton.classList.remove('hidden');
+        elements.stopCallButton.classList.remove('hidden');
+        elements.resetButton.classList.remove('hidden');
+        
+        updateStatusIndicator();
+        showMessage('اتاق تماس با موفقیت ایجاد شد', 'success');
+      } catch (error) {
+        showMessage('خطا در ایجاد تماس: ' + error.message, 'error');
+        resetPage();
+      } finally {
+        toggleLoader(false);
+      }
     }
 
     function stopVDOCall() {
-      isCallActive = false;
-      const iframe = document.getElementById('vdoFrame');
-      iframe.src = "";
-      iframe.classList.add('hidden');
-      document.getElementById('obsSection').classList.add('hidden');
-      document.getElementById('fsButton').classList.add('hidden');
-      document.getElementById('stopCallButton').classList.add('hidden');
+      if (!state.isCallActive) return;
+      
+      state.isCallActive = false;
+      state.isMuted = false;
+      state.isCameraOn = true;
+      
+      elements.vdoFrame.src = '';
+      elements.vdoFrame.classList.add('hidden');
+      elements.obsSection.classList.add('hidden');
+      elements.fsButton.classList.add('hidden');
+      elements.stopCallButton.classList.add('hidden');
+      elements.muteButton.classList.add('hidden');
+      elements.cameraButton.classList.add('hidden');
+      elements.startCallBtn.disabled = false;
+      
+      updateStatusIndicator();
       showMessage('تماس با موفقیت متوقف شد', 'success');
     }
 
     function resetPage() {
-      isCallActive = false;
-      document.getElementById('vdoFrame').src = "";
-      document.getElementById('vdoFrame').classList.add('hidden');
-      document.getElementById('obsSection').classList.add('hidden');
-      document.getElementById('fsButton').classList.add('hidden');
-      document.getElementById('stopCallButton').classList.add('hidden');
-      document.getElementById('resetButton').classList.add('hidden');
-      document.getElementById('obsLink').value = "";
-      document.getElementById('qualitySelect').value = "720";
+      state.isCallActive = false;
+      state.isMuted = false;
+      state.isCameraOn = true;
+      state.obsLink = '';
+      
+      elements.vdoFrame.src = '';
+      elements.vdoFrame.classList.add('hidden');
+      elements.obsSection.classList.add('hidden');
+      elements.fsButton.classList.add('hidden');
+      elements.stopCallButton.classList.add('hidden');
+      elements.muteButton.classList.add('hidden');
+      elements.cameraButton.classList.add('hidden');
+      elements.resetButton.classList.add('hidden');
+      elements.obsLinkInput.value = '';
+      elements.qualitySelect.value = '720';
+      elements.startCallBtn.disabled = false;
+      
+      updateStatusIndicator();
       showMessage('صفحه با موفقیت ریست شد', 'success');
     }
 
-    function copyOBSLink() {
-      const input = document.getElementById("obsLink");
-      const copyMessage = document.getElementById("copyMessage");
-      const errorMessage = document.getElementById("errorMessage");
+    async function copyOBSLink() {
+      if (!state.obsLink) {
+        showMessage('لینکی برای کپی وجود ندارد!', 'error');
+        return;
+      }
 
-      navigator.clipboard.writeText(input.value)
-        .then(() => {
+      try {
+        await navigator.clipboard.writeText(state.obsLink);
+        showMessage('لینک با موفقیت کپی شد!', 'success');
+      } catch {
+        elements.obsLinkInput.select();
+        try {
+          document.execCommand('copy');
           showMessage('لینک با موفقیت کپی شد!', 'success');
-        })
-        .catch(() => {
-          input.select();
-          try {
-            document.execCommand("copy");
-            showMessage('لینک با موفقیت کپی شد!', 'success');
-          } catch (err) {
-            showMessage('خطا در کپی لینک!', 'error');
-          }
-        });
+        } catch {
+          showMessage('خطا در کپی لینک!', 'error');
+        }
+      }
     }
 
     function goFullscreen() {
-      const iframe = document.getElementById("vdoFrame");
-      iframe.classList.add("fullscreen-iframe");
+      const iframe = elements.vdoFrame;
+      iframe.classList.add('fullscreen-iframe');
 
-      if (iframe.requestFullscreen) {
-        iframe.requestFullscreen().catch(err => showMessage('خطا در ورود به حالت تمام‌صفحه!', 'error'));
-      } else if (iframe.mozRequestFullScreen) {
-        iframe.mozRequestFullScreen();
-      } else if (iframe.webkitRequestFullscreen) {
-        iframe.webkitRequestFullscreen();
-      } else if (iframe.msRequestFullscreen) {
-        iframe.msRequestFullscreen();
+      const requestFullscreen = iframe.requestFullscreen || 
+                              iframe.mozRequestFullScreen || 
+                              iframe.webkitRequestFullscreen || 
+                              iframe.msRequestFullscreen;
+
+      if (requestFullscreen) {
+        requestFullscreen.call(iframe).catch(err => 
+          showMessage('خطا در ورود به حالت تمام‌صفحه: ' + err.message, 'error')
+        );
+      } else {
+        showMessage('مرورگر شما از حالت تمام‌صفحه پشتیبانی نمی‌کند', 'error');
       }
     }
 
-    function showLoader(show) {
-      document.getElementById('loader').classList.toggle('hidden', !show);
+    function toggleMute() {
+      state.isMuted = !state.isMuted;
+      elements.muteButton.innerHTML = `
+        <svg class="w-5 h-5 inline-block ml-2" fill="currentColor" viewBox="0 0 20 20">
+          <path d="${state.isMuted ? 'M10 3a2 2 0 00-2 2v5l-3 3v2h3l3-3h1V5a2 2 0 00-2-2H8zm5 2l-3 3' : 'M10 3a2 2 0 00-2 2v5a2 2 0 002 2h1l1 5h2V3h-4z'}"/>
+        </svg>
+        ${state.isMuted ? 'باصدا' : 'بی‌صدا'}
+      `;
+      showMessage(state.isMuted ? 'میکروفون بی‌صدا شد' : 'میکروفون باصدا شد', 'success');
     }
 
-    function showMessage(message, type) {
-      const messageElement = document.getElementById(type === 'success' ? 'copyMessage' : 'errorMessage');
-      messageElement.textContent = message;
-      messageElement.classList.remove('hidden');
-      setTimeout(() => messageElement.classList.add('hidden'), 2000);
+    function toggleCamera() {
+      state.isCameraOn = !state.isCameraOn;
+      elements.cameraButton.innerHTML = `
+        <svg class="w-5 h-5 inline-block ml-2" fill="currentColor" viewBox="0 0 20 20">
+          <path d="${state.isCameraOn ? 'M5 4a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2V8l-3-3H5zm3 10H7v-2h1v2zm3 0h-1v-2h1v2zm3 0h-1v-2h1v2z' : 'M5 4a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2V8l-3-3H5zm3 10H7v-2h1v2zm3 0h-1v-2h1v2zm3 0h-1v-2h1v2zM3 3l3 3'}/>"
+        </svg>
+        ${state.isCameraOn ? 'خاموش دوربین' : 'روشن دوربین'}
+      `;
+      showMessage(state.isCameraOn ? 'دوربین روشن شد' : 'دوربین خاموش شد', 'success');
     }
 
-    document.addEventListener("fullscreenchange", () => {
-      const iframe = document.getElementById("vdoFrame");
+    // Event listeners
+    document.addEventListener('fullscreenchange', () => {
       if (!document.fullscreenElement) {
-        iframe.classList.remove("fullscreen-iframe");
+        elements.vdoFrame.classList.remove('fullscreen-iframe');
       }
     });
 
-    // تغییر تم
     document.getElementById('themeToggle').addEventListener('click', () => {
       document.body.classList.toggle('dark');
       localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
     });
 
-    // بارگذاری تم ذخیره‌شده
+    // Initialize theme
     if (localStorage.getItem('theme') === 'dark') {
       document.body.classList.add('dark');
     }
+
+    // Debounced window resize handler
+    window.addEventListener('resize', debounce(() => {
+      if (!document.fullscreenElement) {
+        elements.vdoFrame.classList.remove('fullscreen-iframe');
+      }
+    }, 200));
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && document.activeElement === elements.startCallBtn) {
+        startVDOCall();
+      }
+    });
   </script>
 </body>
 </html>
