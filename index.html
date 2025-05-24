@@ -317,8 +317,8 @@
           default:
             resolution = "&width=1280&height=720";
         }
-        const pushURL = `https://live.remotevm.ir/?push=${roomId}&autostart&cleanish&transparent&scale=cover${resolution}`;
-        state.obsLink = `https://live.remotevm.ir/?view=${roomId}`;
+        const pushURL = `https://live.remotevm.ir/?push=${roomId}&cleanish&transparent&scale=cover${resolution}`;
+        state.obsLink = `https://live.remotevm.ir/?view=${roomId}&clean`;
 
         elements.vdoFrame.src = pushURL;
         elements.vdoFrame.classList.remove('hidden');
