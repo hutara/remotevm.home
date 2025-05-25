@@ -119,9 +119,43 @@
     }
     .status-active { background: #22c55e; }
     .status-inactive { background: #ef4444; }
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(240, 247, 247);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      opacity: 1;
+      transition: opacity 0.7s ease;
+    }
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .zoom-text {
+      color: #22baed;
+      font-size: 3.5rem;
+      font-weight: bold;
+      font-family: 'Vazirmatn', sans-serif;
+      animation: zoomIn 0.6s ease-in-out;
+    }
+    @keyframes zoomIn {
+      from { transform: scale(3); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+        }
+
   </style>
 </head>
 <body class="min-h-screen flex items-center justify-center">
+  <div id="overlay" class="overlay">
+    <span class="zoom-text">Remote Vm</span>
+  </div>
   <div class="container mx-auto p-6 max-w-xl rounded-xl shadow-2xl">
     <header class="flex justify-between items-center mb-8">
       <div class="flex items-center gap-2">
@@ -233,7 +267,7 @@
       
       <iframe 
         id="vdoFrame" 
-        class="w-full h-[400px] md:h-[600px] rounded-lg hidden border-2 border-gray-700" 
+        class="w-full h-[400px] md:h-[620px] rounded-lg hidden border-2 border-gray-700" 
         allow="camera; microphone; fullscreen"
         title="پنجره تماس تصویری"
       ></iframe>
@@ -295,7 +329,8 @@
       errorMessage: document.getElementById('errorMessage'),
       statusIndicator: document.getElementById('statusIndicator'),
       themeToggle: document.getElementById('themeToggle'),
-      themeIcon: document.getElementById('themeIcon')
+      themeIcon: document.getElementById('themeIcon'),
+      overlay: document.getElementById('overlay')
     };
 
     // Utility functions
@@ -311,7 +346,7 @@
       const messageElement = type === 'success' ? elements.copyMessage : elements.errorMessage;
       messageElement.textContent = message;
       messageElement.classList.remove('hidden');
-      setTimeout(() => messageElement.classList.add('hidden'), 3000);
+      setTimeout(() => messageElement.classList.add('hidden'), 2000);
     };
 
     const toggleLoader = (show) => {
@@ -332,6 +367,13 @@
         ? '<path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12zm-1-6a1 1 0 112 0 1 1 0 01-2 0z"/>'
         : '<path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/>';
     };
+
+    // Overlay animation
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        elements.overlay.classList.add('hidden');
+      }, 1200); // Hide overlay after 3 seconds (2s zoom + 1s fade)
+    });
 
     // Main functions
     async function startVDOCall() {
