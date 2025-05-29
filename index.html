@@ -148,8 +148,6 @@
       from { transform: scale(3); opacity: 0; }
       to { transform: scale(1); opacity: 1; }
     }
-        }
-
   </style>
 </head>
 <body class="min-h-screen flex items-center justify-center">
@@ -400,7 +398,7 @@
             resolution = "&width=1280&height=720";
         }
         const pushURL = `https://live.remotevm.ir/?push=${roomId}&cleanish&transparent&scale=cover${resolution}`;
-        state.obsLink = `https://live.remotevm.ir/?view=${roomId}&clean`;
+        state.obsLink = `https://live.remotevm.ir/?view=${roomId}&clean${resolution}`;
 
         elements.vdoFrame.src = pushURL;
         elements.vdoFrame.classList.remove('hidden');
@@ -453,7 +451,9 @@
       elements.vdoFrame.classList.add('hidden');
       elements.obsSection.classList.add('hidden');
       elements.fsButton.classList.add('hidden');
-      elements.stopCallButton.classList.add('hidden');
+      elements.stop
+
+CallButton.classList.add('hidden');
       elements.muteButton.classList.add('hidden');
       elements.shareButton.classList.add('hidden');
       elements.resetButton.classList.add('hidden');
