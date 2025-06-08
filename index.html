@@ -192,22 +192,55 @@
     .zoom-text { color: var(--zoom-text-color); font-size: 3.5rem; font-weight: bold; animation: zoomIn 0.6s ease-in-out; }
     @keyframes zoomIn { from { transform: scale(3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-    /* --- Share Modal --- */
-    #shareModal {
-        transition: opacity 0.3s ease;
-    }
+    #shareModal { transition: opacity 0.3s ease; }
     #shareModalContent {
         transition: transform 0.3s ease, opacity 0.3s ease;
         transform: scale(0.95);
         opacity: 0;
     }
-    #shareModal.visible {
-        opacity: 1;
+    #shareModal.visible { opacity: 1; }
+    #shareModal.visible #shareModalContent { transform: scale(1); opacity: 1; }
+    
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 28px;
     }
-    #shareModal.visible #shareModalContent {
-        transform: scale(1);
-        opacity: 1;
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
     }
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 28px;
+    }
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    input:checked + .toggle-slider {
+        background-color: var(--primary-color);
+    }
+    input:checked + .toggle-slider:before {
+        transform: translateX(22px);
+    }
+
 
   </style>
 </head>
@@ -219,7 +252,7 @@
     <header class="flex justify-between items-center mb-8">
       <div class="flex items-center gap-3">
         <img src="favicon.png" alt="RemoteVM Logo" class="w-10 h-10">
-        <h1 class="text-3xl font-bold">Live RemoteVM</h1>
+        <h1 class="text-3xl font-bold">تماس تصویری RemoteVM</h1>
         <span id="statusIndicator" class="status-indicator status-inactive" aria-label="وضعیت تماس"></span>
       </div>
       <button id="themeToggle" class="btn btn-neutral p-2 rounded-full" aria-label="تغییر تم" data-tooltip="تغییر تم">
@@ -252,13 +285,24 @@
         </button>
       </div>
 
-      <div class="mb-8">
+      <div class="mb-6">
         <label for="qualitySelect" class="block font-medium mb-2">کیفیت ویدیو:</label>
         <select id="qualitySelect" class="w-full p-3" aria-label="انتخاب کیفیت ویدیو">
           <option value="480">480p</option>
           <option value="720" selected>720p (پیش‌فرض)</option>
           <option value="1080">1080p</option>
         </select>
+      </div>
+      
+      <div class="flex items-center justify-between mb-8 p-2 rounded-lg">
+        <label for="uiCheckbox" class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+            <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            <span>حذف رابط کاربری (UI-less)</span>
+        </label>
+        <label class="toggle-switch">
+            <input type="checkbox" id="uiCheckbox">
+            <span class="toggle-slider"></span>
+        </label>
       </div>
       
       <div id="callContainer" class="relative w-full h-[400px] md:h-[620px] hidden">
@@ -336,6 +380,7 @@
       callContainer: document.getElementById('callContainer'),
       loaderContainer: document.getElementById('loaderContainer'),
       qualitySelect: document.getElementById('qualitySelect'),
+      uiCheckbox: document.getElementById('uiCheckbox'), // New element
       copyMessage: document.getElementById('copyMessage'),
       errorMessage: document.getElementById('errorMessage'),
       statusIndicator: document.getElementById('statusIndicator'),
@@ -394,7 +439,7 @@
         ['obsSection', 'fsButton', 'stopCallButton', 'resetButton', 'muteButton', 'shareButton'].forEach(id => elements[id].classList.remove('hidden'));
         updateMuteButton();
         updateStatusIndicator();
-        showMessage(isReset ? 'اتصال با کیفیت جدید بازنشانی شد' : 'اتاق تماس با موفقیت ایجاد شد', 'success');
+        showMessage(isReset ? 'تنظیمات با موفقیت اعمال شد' : 'اتاق تماس با موفقیت ایجاد شد', 'success');
     };
 
     async function startVDOCall() {
@@ -405,26 +450,30 @@
         elements.startCallBtn.disabled = true;
         const roomId = `room${Math.floor(Math.random() * 100000)}`;
         state.roomId = roomId;
-        updateUrlsByQuality();
+        updateUrls();
         elements.vdoFrame.onload = () => handleCallLoad(false);
         elements.vdoFrame.src = state.pushURL;
       } catch (error) {
         showMessage('خطا در ایجاد تماس: ' + error.message, 'error');
-        stopVDOCall(); // Use stop to fully clean up
+        stopVDOCall();
         toggleLoader(false);
       }
     }
     
-    function updateUrlsByQuality() {
+    function updateUrls() {
+        if (!state.roomId) return;
         const quality = elements.qualitySelect.value;
+        const isClean = elements.uiCheckbox.checked;
+        const uiParam = isClean ? '&clean' : '&cleanish';
+
         let resolution;
         switch (quality) {
           case "480": resolution = "&width=854&height=480"; break;
           case "1080": resolution = "&width=1920&height=1080"; break;
           default: resolution = "&width=1280&height=720";
         }
-        state.pushURL = `https://live.remotevm.ir/?push=${state.roomId}&cleanish&transparent&scale=cover${resolution}`;
-        state.obsLink = `https://live.remotevm.ir/?view=${state.roomId}&clean${resolution}`;
+        state.pushURL = `https://live.remotevm.ir/?push=${state.roomId}&transparent&scale=cover${resolution}${uiParam}`;
+        state.obsLink = `https://live.remotevm.ir/?view=${state.roomId}&transparent${resolution}${uiParam}`;
         elements.obsLinkInput.value = state.obsLink;
     }
 
@@ -451,8 +500,8 @@
       }
       try {
         toggleLoader(true);
-        showMessage('در حال اعمال کیفیت جدید و بازنشانی اتصال...', 'success'); 
-        updateUrlsByQuality(); // Update URLs with new quality
+        showMessage('در حال اعمال تنظیمات جدید و بازنشانی اتصال...', 'success'); 
+        updateUrls(); 
         elements.vdoFrame.onload = () => handleCallLoad(true);
         elements.vdoFrame.src = 'about:blank';
         setTimeout(() => { elements.vdoFrame.src = state.pushURL; }, 100);
@@ -483,6 +532,10 @@
       }
     }
     
+    function copyOBSLink() {
+        copyToClipboard(state.obsLink, 'لینک OBS با موفقیت کپی شد!', 'خطا در کپی لینک OBS!');
+    }
+
     function goFullscreen() {
       if (elements.vdoFrame.requestFullscreen) {
         elements.vdoFrame.requestFullscreen().catch(err => showMessage(`خطا در تمام‌صفحه: ${err.message}`, 'error'));
@@ -512,7 +565,8 @@
         elements.shareModal.classList.remove('visible');
         setTimeout(() => elements.shareModal.classList.add('hidden'), 300);
     }
-
+    
+    // Event Listeners
     elements.shareButton.addEventListener('click', openShareModal);
     elements.closeShareModal.addEventListener('click', closeShareModal);
     elements.shareModal.addEventListener('click', (e) => {
@@ -551,6 +605,13 @@
     });
 
     elements.startCallBtn.addEventListener('click', startVDOCall);
+    
+    elements.uiCheckbox.addEventListener('change', () => {
+      if (state.isCallActive) {
+        updateUrls();
+        showMessage('لینک‌های اشتراک‌گذاری به‌روز شدند.', 'success');
+      }
+    });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && document.activeElement.tagName === 'BUTTON') {
